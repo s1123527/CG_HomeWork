@@ -37,12 +37,23 @@ $("#toggle1").click(function() {
 });
 
 $("#toggle2").click(function() {
-  nintendoswitch += 1;
-  if(nintendoswitch >= 3)
-	nintendoswitch = 0;
+	nintendoswitch += 1;
+	if(nintendoswitch >= 3) 
+		nintendoswitch = 0;
 	else if (nintendoswitch == 1 &&turn == true){
-			setTimeout(move, 1000);
-		}
+		setTimeout(move, 1000);
+	}
+	if(nintendoswitch == 2){
+		cube.visible = false;
+		circle.visible = true;
+		circleangle = -cube.rotation.y;
+	}
+	else{
+		if(nintendoswitch ==0) cube.rotation.y = -circleangle;
+		cube.visible = true;
+		circle.visible = false;
+		
+	}
 });
 function init () {
 	
@@ -74,12 +85,12 @@ function init () {
 	circle = new THREE.Mesh( geometry, material );
 	scene.add( circle );
 	circle.rotation.x = Math.PI/2;
-	var cubeGeometry = new THREE.BoxGeometry (10,1,1);
+	var cubeGeometry = new THREE.BoxGeometry (1,1,10);
 	var cubeMaterial = new THREE.MeshNormalMaterial();
 	cube = new THREE.Object3D();
 	var hn = new THREE.Mesh (cubeGeometry, cubeMaterial);
 	cube.add(hn);
-	hn.position.x = 5;
+	hn.position.z = -5;
 	scene.add (cube);
 	keyboard = new KeyboardState();
 	
@@ -106,15 +117,15 @@ function animate() {
 	keyboard.update();
 	var s = c.getDelta();
 	
-	
+	angle = s * 6 * Math.PI / 180;
 	if (turn){
 		if(nintendoswitch == 0){
 			
-			angle = s * 6 * Math.PI / 180;
+			//angle = s * 6 * Math.PI / 180;
 			cube.rotation.y -= angle;
 		}
 		else if (nintendoswitch == 2){
-			circleangle += s * 6 * Math.PI / 180;
+			circleangle += angle//s * 6 * Math.PI / 180;
 			circle.geometry.dispose();
 			var tmp = new THREE.CircleGeometry(10, 30, -Math.PI/2, circleangle);
 			circle.geometry = tmp;
