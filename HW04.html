@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+</style>
+</head>
+<body> 
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/109/three.min.js">
+</script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js">
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/r16/Stats.min.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="https://jyunming-chen.github.io/tutsplus/js/KeyboardState.js"></script>
+<script src="https://rawgit.com/mrdoob/three.js/master/examples/js/loaders/MTLLoader.js"></script>
+<script src="https://rawgit.com/mrdoob/three.js/master/examples/js/loaders/OBJLoader.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5.1/dat.gui.min.js"></script>
+<script type="text/javascript">
+
+
+var renderer, camera , scene, axes;
+var stats;
+var keyboard = new KeyboardState();
+var mesh;
+var pickables = [];
+var raycaster = new THREE.Raycaster();
+var mouse = new THREE.Vector2();
+var light;
+var controler;
+var lit;
+
+class lampswitch{
+	constructor(location){
+	
+		
+		this.myswitch = new THREE.Group();
+		this.casing = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.3, 0.3, 15), new THREE.MeshPhongMaterial())
+		this.core = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.3, 15), new THREE.MeshPhongMaterial({
+		//color: 'red'
+		}))
+		this.myswitch.add(this.casing, this.core);this.myswitch.position.copy(location)
+		scene.add(this.myswitch);
+		this.casing.position.y = 0.5;
+		this.core.position.y = 0.8;
+    }
+}
+
+
+
+init();
+animate();
+
+
+
+
+function init() {
+  
+
+   scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+      camera.position.z = 50;
+      camera.position.y = 30
+      light = new THREE.PointLight(0xffffff);
+      light.position.set(100, 300, 200);
+      scene.add(light);
+      var light2 = new THREE.AmbientLight(0x808080); // soft white light
+      scene.add(light2);
+	  
+	  
+      var gridXZ = new THREE.GridHelper(200, 20, 'red', 'white');
+      scene.add(gridXZ);
+      renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x888888);
+      let controls = new THREE.OrbitControls(camera, renderer.domElement);
+      document.body.appendChild(renderer.domElement);
+	  
+	  var texture = new THREE.TextureLoader().load("bamboo.jpg");
+	  texture.repeat.set(1,1);
+	  texture.wrapS = THREE.RepeaWrapping;
+	  texture.wrapT = THREE.RepeaWrapping;
+	  texture.minFilter = THREE.LinearFilter;
+	  
+	  var geometry = new THREE.BoxGeometry( 20, 3, 40 );
+	  var material = new THREE.MeshPhongMaterial( { map:texture} );
+	  var cube = new THREE.Mesh( geometry, material );
+	  cube.position.y += 10;
+	  scene.add( cube );
+	  
+	  var geometry = new THREE.BoxGeometry( 2, 10, 2 );
+	  var material = new THREE.MeshPhongMaterial( { map:texture} );
+	  var foot1 = new THREE.Mesh( geometry, material );
+	  foot1.position.set(8,5,17);
+	  scene.add( foot1 );
+	  
+	  var geometry = new THREE.BoxGeometry( 2, 10, 2 );
+	  var material = new THREE.MeshPhongMaterial( { map:texture} );
+	  var foot2 = new THREE.Mesh( geometry, material );
+	  foot2.position.set(-8,5,-17);
+	  scene.add( foot2 );
+	  
+	  var geometry = new THREE.BoxGeometry( 2, 10, 2 );
+	  var material = new THREE.MeshPhongMaterial( { map:texture} );
+	  var foot3 = new THREE.Mesh( geometry, material );
+	  foot3.position.set(8,5,-17);
+	  scene.add( foot3 );
+	  
+	  var geometry = new THREE.BoxGeometry( 2, 10, 2 );
+	  var material = new THREE.MeshPhongMaterial( {map:texture} );
+	  var foot4 = new THREE.Mesh( geometry, material );
+	  foot4.position.set(-8,5,17);
+	  scene.add( foot4 );
+	  
+	  var geometry = new THREE.BoxGeometry( 5, 1, 3 );
+	  var material = new THREE.MeshPhongMaterial();
+	  var controler = new THREE.Mesh( geometry, material );
+	  controler.position.set(4,12,0);
+	  scene.add( controler );
+	  
+	  var NS = new lampswitch(controler.position);
+	  scene.add(NS.myswitch);
+	  
+	  readModel('Armchair', 15, new THREE.Vector3(20, 0, 0), Math.PI);
+	  readModel('Lamp',9, new THREE.Vector3(0,11.8,0),Math.PI);
+	  
+	 
+  
+}
+
+function animate() {
+  
+  requestAnimationFrame (animate);
+  renderer.render (scene, camera);
+  
+}
+
+function onDocumentMouseDown(event) {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  // find intersections
+  raycaster.setFromCamera(mouse, camera);
+  var intersects = raycaster.intersectObjects(pickables, false);
+  if (intersects.length > 0) {
+    lit = !lit; // toggle;
+    if (lit) {
+      core.material.emissive = new THREE.Color(0x030303);
+      light.intensity = 1;
+    } else {
+      core.material.emissive = new THREE.Color('red');
+      light.intensity = 0;
+    }
+  } else {
+    console.log('no hit')
+  }
+
+}
+
+function readModel(modelName, targetSize = 1, pos, rotate) {
+      var onProgress = function(xhr) {
+        if (xhr.lengthComputable) {
+          var percentComplete = xhr.loaded / xhr.total * 100;
+          console.log(Math.round(percentComplete, 2) + '% downloaded');
+        }
+      };
+      var onError = function(xhr) {};
+      var mtlLoader = new THREE.MTLLoader();
+      mtlLoader.setPath('models/' + modelName + '/' );
+      mtlLoader.load(modelName + '.mtl', function(materials) {
+        materials.preload();
+        var objLoader = new THREE.OBJLoader();
+        objLoader.setMaterials(materials);
+        objLoader.setPath('models/' + modelName + '/');
+        objLoader.load(modelName + '.obj', function(object) {
+          let theObject = unitize(object, targetSize);
+          theObject.rotation.y = Math.PI / 3 +0.1;
+          theObject.name = modelName;
+          mesh  = theObject;
+		  mesh.position.copy(pos);
+		  mesh.rotation.y = rotate;
+          scene.add(mesh);
+          
+        }, onProgress, onError);
+      });
+}
+	
+function unitize(object, targetSize) {
+     // find bounding box of 'object'
+    var box3 = new THREE.Box3();
+    box3.setFromObject(object);
+    var size = new THREE.Vector3();
+    size.subVectors(box3.max, box3.min);
+    var center = new THREE.Vector3();
+    center.addVectors(box3.max, box3.min).multiplyScalar(0.5);
+	console.log('center: ' + center.x + ', ' + center.y + ', ' + center.z);
+    console.log('size: ' + size.x + ', ' + size.y + ', ' + size.z);
+    // uniform scaling according to objSize
+    var objSize = Math.max(size.x, size.y, size.z);
+    var scaleSet = targetSize / objSize;
+    var theObject = new THREE.Object3D();
+    theObject.add(object);
+    object.scale.set(scaleSet, scaleSet, scaleSet);
+    object.position.set(-center.x * scaleSet, -center.y * scaleSet + size.y / 2 * scaleSet, -center.z * scaleSet);
+    return theObject;
+}
+	
+</script>
+</body>
+</html>
